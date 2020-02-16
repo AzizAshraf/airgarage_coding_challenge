@@ -1,0 +1,65 @@
+#!/usr/bin/env python
+
+import json
+import argparse
+import sys
+
+from lot import Lot
+from parkinglot import ParkingLot
+
+# just in case the file name and more queries should be added, these are made into variables
+requiredjson = "airgarage-data.json"
+queryoptions = ["find_price_hourly_lte", "find_price_hourly_gt", "locate"]
+
+
+# parser is for reading the commandline arguments.
+# first argument is the file, 2nd is the query, and 3rd is either state or price
+parser = argparse.ArgumentParser()
+parser.add_argument("jsonfile", help="name of the json file with parkinglot data", choices=[requiredjson])
+parser.add_argument("query", help="type of query to be made", choices=queryoptions)
+parser.add_argument("stateprice", help="state if location or price if pricerange")
+args = parser.parse_args()
+
+def run_parkbot(requriedjson, jsonfile, query, stateprice):
+    
+    if jsonfile == requriedjson :
+        with open(jsonfile) as lotdata:
+            jsondata = json.load(lotdata)
+    else:
+        print("invalid file")
+        return
+
+    # inintialize parkingstructure object 
+    parkingstructure = ParkingLot()
+
+    # store all the data in parkingstructure 
+    for jsonlot in jsondata:
+        lot = Lot(jsonlot)
+        parkingstructure.addlot(lot)
+#    parkingstructure.printbyprice()
+#    parkingstructure.printbystates()
+
+    try:
+        price = int(stateprice)
+    
+        # query is find_price_hourly and therefore stateprice arg should be an int
+        if query != "locate":
+            print(parkingstructure.pricequery(price, query))
+    
+        else:
+        # query is locate and stateprice variable is an integer, which means there is
+        # an invalid input
+            print("invalid input, locate requires state")
+    except ValueError:
+        if query == "locate":
+        # this mean value error was thrown and stateprice variable is not an integer
+        # makes the assumption that it is a state
+            print(parkingstructure.locate(stateprice))
+        else:
+        # query is find_hourly_price and the price cannot be determined which means 
+        # price was not given as an integer
+            print("invalid input, input valid price")
+
+if __name__ == "__main__":
+    
+    run_parkbot(requiredjson, args.jsonfile, args.query, args.stateprice)    
